@@ -24,12 +24,27 @@ util.inherits(GotError, NestedErrorStacks);
 GotError.prototype.name = 'GotError';
 
 function got(url, opts, cb) {
-	if (typeof opts === 'function') {
-		cb = opts;
-		opts = {};
-	}
 
-	opts = objectAssign({}, opts);
+	// TODO test dynamic signature
+	if (typeof url === 'string') {
+		// String url[, Object opts][, Function fn]
+		if (typeof opts === 'function') {
+			// String url[, Function fn]
+			cb = opts;
+			opts = {};
+		} else if (!opts) {
+			// String url[, null opts][, Function fn]
+			opts = {};
+		}
+
+		url = prependHttp(url);
+		opts = objectAssign(urlLib.parse(url), opts);
+	} else {
+		// Object url[, Function fn]
+		cb = opts;
+		opts = objectAssign({}, url);
+		opts.href = url.format(url);
+	}
 
 	opts.headers = objectAssign({
 		'user-agent': 'https://github.com/sindresorhus/got',
@@ -69,13 +84,12 @@ function got(url, opts, cb) {
 		throw new GotError('options.body must be a ReadableStream, string or Buffer');
 	}
 
-	function get(url, opts, cb) {
-		var parsedUrl = urlLib.parse(prependHttp(url));
-		var fn = parsedUrl.protocol === 'https:' ? https : http;
-		var arg = objectAssign({}, parsedUrl, opts);
+	function get(opts, cb) {
+		var fn = opts.protocol === 'https:' ? https : http;
+		var url = opts.href;
 
-		if (arg.agent === undefined) {
-			arg.agent = infinityAgent[fn === https ? 'https' : 'http'].globalAgent;
+		if (opts.agent === undefined) {
+			opts.agent = infinityAgent[fn === https ? 'https' : 'http'].globalAgent;
 
 			// TODO: remove this when Node 0.10 will be deprecated
 			if (process.version.indexOf('v0.10') === 0 && fn === https && (
@@ -86,13 +100,12 @@ function got(url, opts, cb) {
 				typeof opts.passphrase !== 'undefined' ||
 				typeof opts.pfx !== 'undefined' ||
 				typeof opts.rejectUnauthorized !== 'undefined')) {
-				arg.agent = new (infinityAgent.https.Agent)(opts);
+				opts.agent = new (infinityAgent.https.Agent)(opts);
 			}
 		}
 
-		var req = fn.request(arg, function (response) {
-			var statusCode = response.statusCode;
-			var res = response;
+		var req = fn.request(opts, function (res) {
+			var statusCode = res.statusCode;
 
 			if (proxy) {
 				proxy.emit('response', res);
@@ -107,7 +120,20 @@ function got(url, opts, cb) {
 					return;
 				}
 
-				get(urlLib.resolve(url, res.headers.location), opts, cb);
+				// TODO test
+				url = prependHttp(urlLib.resolve(url, res.headers.location));
+
+				// extend existing options with new url
+				opts = objectAssign(opts, urlLib.parse(url));
+
+				if (opts.agent) {
+					// delete existing agent coz it may be changed if the protocol was changed
+					// TODO do not remove user\'s agent, remove only custom agent
+					delete opts.agent;
+				}
+
+				get(opts, cb);
+
 				return;
 			}
 
@@ -128,7 +154,7 @@ function got(url, opts, cb) {
 						}
 					}
 
-					cb(err, data, response);
+					cb(err, data, res);
 				});
 				return;
 			}
@@ -150,7 +176,7 @@ function got(url, opts, cb) {
 					}
 				}
 
-				cb(err, data, response);
+				cb(err, data, res);
 			});
 		}).once('error', function (err) {
 			cb(new GotError('Request to ' + url + ' failed', err));
@@ -192,7 +218,7 @@ function got(url, opts, cb) {
 		req.end();
 	}
 
-	get(url, opts, cb);
+	get(opts, cb);
 	return proxy;
 }
 
