@@ -100,7 +100,10 @@ function got(url, opts, cb) {
 				typeof opts.passphrase !== 'undefined' ||
 				typeof opts.pfx !== 'undefined' ||
 				typeof opts.rejectUnauthorized !== 'undefined')) {
-				opts.agent = new (infinityAgent.https.Agent)(opts);
+
+				opts.agent = new (infinityAgent.https.Agent)(objectAssign({}, opts, {
+					host: opts.host && opts.host.split(':')[0]
+				}));
 			}
 		}
 
