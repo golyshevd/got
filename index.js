@@ -25,7 +25,6 @@ GotError.prototype.name = 'GotError';
 
 function got(url, opts, cb) {
 
-	// TODO test dynamic signature
 	if (typeof url === 'string') {
 		// String url[, Object opts][, Function fn]
 		if (typeof opts === 'function') {
