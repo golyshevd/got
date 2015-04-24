@@ -102,7 +102,8 @@ function got(url, opts, cb) {
 				typeof opts.rejectUnauthorized !== 'undefined')) {
 
 				opts.agent = new (infinityAgent.https.Agent)(objectAssign({}, opts, {
-					host: opts.host && opts.host.split(':')[0]
+					// host for tls.connect() is not an url.host, it is like url.hostname
+					host: urlLib.parse(urlLib.format(opts)).hostname
 				}));
 			}
 		}
