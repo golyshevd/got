@@ -10,12 +10,6 @@ s.on('/', function (req, res) {
 	res.end('ok');
 });
 
-s.on('/timeout10', function (req, res) {
-	setTimeout(function () {
-		res.end('ok');
-	}, 10);
-});
-
 s.on('/redirect', function (req, res) {
 	res.setHeader('Location', '/');
 	res.statusCode = 302;
