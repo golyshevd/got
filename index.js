@@ -126,7 +126,6 @@ function got(url, opts, cb) {
 					return;
 				}
 
-				// TODO test
 				url = prependHttp(urlLib.resolve(url, res.headers.location));
 
 				// extend existing options with new url
