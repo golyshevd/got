@@ -14,6 +14,7 @@ var prependHttp = require('prepend-http');
 var lowercaseKeys = require('lowercase-keys');
 var statuses = require('statuses');
 var NestedErrorStacks = require('nested-error-stacks');
+var qsLib = require('querystring');
 
 function GotError(message, nested) {
 	NestedErrorStacks.call(this, message, nested);
@@ -33,12 +34,12 @@ function got(url, opts, cb) {
 		} // else url, opts[, cb]
 
 		url = prependHttp(url);
-		opts = objectAssign(urlLib.parse(url), opts);
+		opts = mergeOpts(urlLib.parse(url), opts);
 	} else {
 		// opts[, cb]
 		cb = opts;
-		opts = objectAssign({}, url);
-		opts.href = url.format(url);
+		opts = mergeOpts({}, url);
+		opts.href = url.format(opts);
 	}
 
 	opts.headers = objectAssign({
@@ -126,7 +127,7 @@ function got(url, opts, cb) {
 				url = prependHttp(urlLib.resolve(url, res.headers.location));
 
 				// extend existing options with new url
-				opts = objectAssign(opts, urlLib.parse(url));
+				opts = mergeOpts(opts, urlLib.parse(url));
 
 				if (autoAgent) {
 					// delete existing agent coz it may be changed if the protocol was changed
@@ -240,5 +241,30 @@ function got(url, opts, cb) {
 		return got(url, objectAssign({}, opts, {method: el.toUpperCase()}), cb);
 	};
 });
+
+function mergeOpts(opts1, opts2) {
+	var opts = objectAssign(opts1, opts2);
+
+	if (!opts.path) {
+		opts.path = '/';
+	}
+
+	if (opts.query) {
+		if (typeof opts.query === 'string') {
+			opts.query = qsLib.parse(opts.query);
+		}
+
+		// merge path and query
+		var parsedPath = urlLib.parse(opts.path, true);
+
+		delete parsedPath.search;
+
+		parsedPath.query = objectAssign(parsedPath.query, opts.query);
+
+		opts.path = urlLib.format(parsedPath);
+	}
+
+	return opts;
+}
 
 module.exports = got;
