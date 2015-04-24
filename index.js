@@ -83,11 +83,14 @@ function got(url, opts, cb) {
 		throw new GotError('options.body must be a ReadableStream, string or Buffer');
 	}
 
+	var autoAgent = false;
+
 	function get(opts, cb) {
 		var fn = opts.protocol === 'https:' ? https : http;
 		var url = opts.href;
 
 		if (opts.agent === undefined) {
+			autoAgent = true;
 			opts.agent = infinityAgent[fn === https ? 'https' : 'http'].globalAgent;
 
 			// TODO: remove this when Node 0.10 will be deprecated
@@ -129,9 +132,8 @@ function got(url, opts, cb) {
 				// extend existing options with new url
 				opts = objectAssign(opts, urlLib.parse(url));
 
-				if (opts.agent) {
+				if (autoAgent) {
 					// delete existing agent coz it may be changed if the protocol was changed
-					// TODO do not remove user\'s agent, remove only custom agent
 					delete opts.agent;
 				}
 
