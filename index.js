@@ -110,8 +110,9 @@ function got(url, opts, cb) {
 			}
 		}
 
-		var req = fn.request(opts, function (res) {
-			var statusCode = res.statusCode;
+		var req = fn.request(opts, function (response) {
+			var statusCode = response.statusCode;
+			var res = response;
 
 			if (proxy) {
 				proxy.emit('response', res);
@@ -158,7 +159,7 @@ function got(url, opts, cb) {
 						}
 					}
 
-					cb(err, data, res);
+					cb(err, data, response);
 				});
 				return;
 			}
@@ -180,7 +181,7 @@ function got(url, opts, cb) {
 					}
 				}
 
-				cb(err, data, res);
+				cb(err, data, response);
 			});
 		}).once('error', function (err) {
 			cb(new GotError('Request to ' + url + ' failed', err));
