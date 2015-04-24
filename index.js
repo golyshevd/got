@@ -26,20 +26,16 @@ GotError.prototype.name = 'GotError';
 function got(url, opts, cb) {
 
 	if (typeof url === 'string') {
-		// String url[, Object opts][, Function fn]
 		if (typeof opts === 'function') {
-			// String url[, Function fn]
+			//url[, cb]
 			cb = opts;
 			opts = {};
-		} else if (!opts) {
-			// String url[, null opts][, Function fn]
-			opts = {};
-		}
+		} // else url, opts[, cb]
 
 		url = prependHttp(url);
 		opts = objectAssign(urlLib.parse(url), opts);
 	} else {
-		// Object url[, Function fn]
+		// opts[, cb]
 		cb = opts;
 		opts = objectAssign({}, url);
 		opts.href = url.format(url);

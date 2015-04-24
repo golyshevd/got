@@ -30,13 +30,6 @@ tape('String url, Object opts, Function, cb', function (t) {
 	});
 });
 
-tape('String url, null opts, Function, cb', function (t) {
-	got(s.url, null, function (err, data) {
-		t.equal(data, 'ok');
-		t.end();
-	});
-});
-
 tape('Object url, Function, cb', function (t) {
 	got(urlLib.parse(s.url), function (err, data) {
 		t.equal(data, 'ok');
